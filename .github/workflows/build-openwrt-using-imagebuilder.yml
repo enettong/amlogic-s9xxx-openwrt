@@ -12,6 +12,10 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
+      upload:
+        description: "upload"
+        required: false
+        default: ""
       releases_branch:
         description: "Select the releases branch"
         required: false
@@ -369,7 +373,7 @@ jobs:
 
       - name: Upload OpenWrt rootfs to Release
         uses: ncipollo/release-action@main
-        if: ${{ steps.imagebuilder.outputs.status == 'success' && !cancelled() }}
+        if: ${{ steps.imagebuilder.outputs.status == 'success' && !cancelled() &&inputs.upload == 'release' }}
         with:
           tag: ${{ env.build_tag }}
           artifacts: output/*
@@ -394,7 +398,7 @@ jobs:
 
       - name: Upload packaged OpenWrt to Release
         uses: ncipollo/release-action@main
-        if: ${{ env.PACKAGED_STATUS == 'success' && !cancelled() }}
+        if: ${{ env.PACKAGED_STATUS == 'success' && !cancelled() && inputs.upload == 'release' }}
         with:
           tag: ${{ env.build_tag }}
           artifacts: ${{ env.PACKAGED_OUTPUTPATH }}/*
@@ -415,3 +419,8 @@ jobs:
             ### Applicable Platform
             - 🐧 `arm64`
             - 🐋 Docker image: https://hub.docker.com/u/ophub
+      - name: Upload artifact to Actions
+        uses: kittaakos/upload-artifact-as-is@master
+        if: ${{ steps.build.outputs.status == 'success' && env.UPLOAD_FIRMWARE == 'true' && !cancelled() && inputs.upload == 'action' }}
+        with:
+           path: ${{ env.FILEPATH }}/
